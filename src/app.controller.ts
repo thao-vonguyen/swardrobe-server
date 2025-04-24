@@ -6,8 +6,7 @@ export class AppController {
   constructor(private readonly appService: AppService) { }
 
   @Get()
-  async getHello() {
-    // return await prisma.user.findMany()
+  getHello () {
     return this.appService.getHello();
   }
 }
