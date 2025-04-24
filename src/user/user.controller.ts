@@ -1,18 +1,19 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
 import { UserService } from './user.service';
+import { UserDto } from './dto/user.dto';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
   @Post()
-  create(@Body() body: any) {
+  create(@Body() body: UserDto) {
     return this.userService.create(body);
   }
 
-  @Get()
-  findAll() {
-    return this.userService.findAll();
+  @Patch(':id') // Sử dụng PATCH để cập nhật dữ liệu
+  update(@Param('id') id: string, @Body() body: UserDto) {
+    return this.userService.update(+id, body); // gọi phương thức update trong UserService
   }
 
   @Get(':id')
