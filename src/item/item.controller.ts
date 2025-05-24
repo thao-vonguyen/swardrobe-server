@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
 import { ItemService } from './item.service';
 import { ItemDto } from './dto/item.dto';
 
@@ -24,5 +24,10 @@ export class ItemController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: ItemDto) {
     return this.itemService.update(+id, body);
+  }
+
+  @Get()
+  async detectClothing(@Query('image') imageName: string) {
+    return this.itemService.detectClothing(imageName);
   }
 }

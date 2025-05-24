@@ -19,9 +19,12 @@ model item {
 }
 
 model user {
-  id     Int     @id @default(autoincrement())
-  name   String
-  gender String? @db.Char(1)
-  age    Int?
-  item   item[]
+  id            Int       @id @default(autoincrement())
+  full_name     String
+  gender        String?   @default("M") @db.Char(1)
+  email         String    @default("example@gmail.com")
+  phone         String    @default("0123456789")
+  date_of_birth DateTime? @db.Date
+  password      String    @default("123456")
+  item          item[]
 }
