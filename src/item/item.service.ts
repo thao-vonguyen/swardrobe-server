@@ -3,11 +3,15 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
+import sharp from 'sharp';
+import getColors from 'get-image-colors';
+import { removeBackgroundFromImageFile } from 'remove.bg';
 
 @Injectable()
 export class ItemService {
     private readonly API_KEY = 'ZA3Rip32FuiLPZNbkJDR';
     private readonly MODEL_URL = 'https://serverless.roboflow.com/clothing-detection-s4ioc/6';
+    private readonly REMOVE_BG_KEY = '6ZpgC1wjpqDLQvFwMUURAZbZ';
     constructor(private prisma: PrismaService) { }
 
     create(data: any) {
@@ -29,20 +33,50 @@ export class ItemService {
         return this.prisma.item.delete({ where: { id } });
     }
 
+    private async getDominantColors(imagePath: string): Promise<string[]> {
+        const colors = await getColors(imagePath); // tự đoán loại file từ extension
+        return colors.map(color => color.hex());
+    }
+
     async detectClothing(imageName: string): Promise<any> {
+        const imageBaseName = path.parse(imageName).name; // 👉 lấy phần tên không có đuôi
         const imagePath = path.join(__dirname, '..', '..', 'images', imageName);
-        const base64Image = fs.readFileSync(imagePath, { encoding: 'base64' });
+        const noBgName = `no-bg-${imageBaseName}.png`; // ✅ tên chuẩn cho ảnh tách nền
+        const noBgPath = path.join(__dirname, '..', '..', 'images', noBgName);
 
         try {
-        const response = await axios.post(this.MODEL_URL, base64Image, {
-            params: { api_key: this.API_KEY },
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
+            // Bước 1: Tách nền trước
+            await removeBackgroundFromImageFile({
+                path: imagePath,
+                apiKey: this.REMOVE_BG_KEY,
+                size: 'auto',
+                type: 'auto',
+                outputFile: noBgPath,
+            });
 
-        return response.data;
+            // Bước 2: Encode ảnh đã tách nền sang base64 để gửi Roboflow
+            const base64Image = fs.readFileSync(noBgPath, { encoding: 'base64' });
+
+            // Bước 3: Gửi Roboflow predict
+            const detectionRes = await axios.post(this.MODEL_URL, base64Image, {
+                params: { api_key: this.API_KEY },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+
+            const prediction = detectionRes.data.predictions[0];
+            if (!prediction) throw new Error('Không phát hiện được quần áo nào');
+
+            // Bước 4: Lấy màu chủ đạo
+            const hexColors = await this.getDominantColors(noBgPath);
+
+            return {
+                prediction,
+                no_bg_image: `no-bg-${imageName}`,
+                dominantColors: hexColors,
+            };
         } catch (error) {
-        console.error('❌ Lỗi gọi Roboflow API:', error.message);
-        throw error;
+            console.error('❌ Lỗi xử lý ảnh:', error.message);
+            throw error;
         }
     }
 
