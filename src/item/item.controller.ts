@@ -5,6 +5,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { Express } from 'express';
 
 @ApiBearerAuth()
@@ -42,14 +43,14 @@ export class ItemController {
       storage: diskStorage({
         destination: './images',
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
-          cb(null, `${uniqueSuffix}${ext}`);
+          const uniqueName = uuidv4() + ext;
+          cb(null, uniqueName);
         },
       }),
     }),
   )
-  async detectByFile(@UploadedFile() file: any) {
+  async detectByFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new Error('No file uploaded');
     }
