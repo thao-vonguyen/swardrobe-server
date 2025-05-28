@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
 import { ItemService } from './item.service';
 import { ItemDto } from './dto/item.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('items')
 export class ItemController {
   constructor(private readonly itemService: ItemService) { }
