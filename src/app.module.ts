@@ -1,13 +1,14 @@
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserModule } from './user/user.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { ItemModule } from './item/item.module';
 import { JwtMiddleware } from './common/middleware/jwt.middleware';
+import { ItemModule } from './item/item.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { UserModule } from './user/user.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
-  imports: [UserModule, PrismaModule, ItemModule],
+  imports: [UserModule, PrismaModule, ItemModule, UploadModule],
   controllers: [AppController],
   providers: [AppService],
 })
