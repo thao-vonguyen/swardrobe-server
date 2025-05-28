@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import axios from 'axios';
 import * as fs from 'fs';
-import * as path from 'path';
-import sharp from 'sharp';
 import getColors from 'get-image-colors';
+import * as path from 'path';
 import { removeBackgroundFromImageFile } from 'remove.bg';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ItemService {

@@ -18,6 +18,7 @@ export class AppModule {
       .exclude(
         { path: 'users/login', method: RequestMethod.POST },
         { path: 'users/register', method: RequestMethod.POST }, // register
+        { path: 'items/detect', method: RequestMethod.POST },
       )
       .forRoutes('*'); // hoặc chỉ định cụ thể path/module nào
   }
