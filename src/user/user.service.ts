@@ -10,6 +10,15 @@ export class UserService {
 
     async create(data: UserDto) {
         if (!data.email || !data.full_name || !data.password) {
+            if (!data.email) {
+                console.error('Email is missing');
+            }
+            if (!data.full_name) {
+                console.error('Full name is missing');
+            }
+            if (!data.password) {
+                console.error('Password is missing');
+            }
             throw new BadRequestException('Missing required fields');
         }
 

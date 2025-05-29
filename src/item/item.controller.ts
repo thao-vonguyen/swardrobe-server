@@ -30,4 +30,9 @@ export class ItemController {
   async detectClothing(@Query('image') imageName: string) {
     return this.itemService.detectClothing(imageName);
   }
+
+  @Get('my/:user_id')
+  findAll(@Param('user_id') user_id: string) {
+    return this.itemService.findAll(user_id);
+  }
 }
