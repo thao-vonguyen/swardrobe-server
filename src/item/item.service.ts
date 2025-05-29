@@ -45,4 +45,12 @@ export class ItemService {
         throw error;
         }
     }
+
+    findAll(user_id: string) {
+        return this.prisma.item.findMany(
+            {
+                where: { user_id: Number(user_id) },
+            }
+        );
+    }
 }

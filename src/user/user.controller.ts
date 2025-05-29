@@ -2,18 +2,19 @@ import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/commo
 import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
 import { LoginDto } from './dto/login.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from 'src/auth/public.decorator';
 
-@ApiBearerAuth()
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
+  @Public() // Đánh dấu route này là công khai, không cần xác thực
   @Post('register')
   create(@Body() body: UserDto) {
     return this.userService.create(body);
   }
 
+  @Public() // Đánh dấu route này là công khai, không cần xác thực
   @Post('login')
   async login(@Body() body: LoginDto) {
     return this.userService.login(body.email, body.password);
