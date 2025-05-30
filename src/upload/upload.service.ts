@@ -19,7 +19,7 @@ export class UploadService {
 
     async upload(fileName: string, file: Buffer): Promise<string> {
         const contentType = mimeLookup(fileName) || 'application/octet-stream';
-        console.log(contentType);
+
         await this.s3Client.send(
             new PutObjectCommand({
                 Bucket: this.bucketName,

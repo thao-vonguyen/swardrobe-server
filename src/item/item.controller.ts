@@ -36,13 +36,12 @@ export class ItemController {
     return this.itemService.update(+id, body);
   }
 
-  // @Get()
-  // async detectClothing(@Query('image') imageName: string) {
-  //   return this.itemService.detectClothing(imageName);
-  // }
   @Post('detect')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
     const ext = extname(file.originalname) || '.png';
     const uniqueName = uuidv4() + ext;
     const result = await this.itemService.detectClothingAfterUpload(uniqueName, file.buffer);

@@ -47,9 +47,16 @@ export class ItemService {
 
     async detectClothingAfterUpload(imageName: string, buffer: Buffer): Promise<any> {
         const imageBaseName = path.parse(imageName).name;
-        const imagePath = path.join(__dirname, '..', '..', 'temp', imageName); // lưu tạm
+        const tempDir = path.join(__dirname, '..', '..', 'temp');
+
+        // ✅ Tạo thư mục nếu chưa tồn tại
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+
+        const imagePath = path.join(tempDir, imageName);
         const noBgName = `no-bg-${imageBaseName}.png`;
-        const noBgPath = path.join(__dirname, '..', '..', 'temp', noBgName);
+        const noBgPath = path.join(tempDir, noBgName);
 
         try {
             // 1. Lưu file gốc vào ổ đĩa tạm thời
@@ -67,13 +74,10 @@ export class ItemService {
             // 3. Đọc ảnh tách nền vào buffer
             const noBgBuffer = fs.readFileSync(noBgPath);
 
-            // 4. Upload lên W3S
-            const noBgUri = await this.uploadService.upload(noBgName, noBgBuffer); // URI trả về từ W3S
-
-            // 5. Encode base64 ảnh đã tách nền
+            // 4. Encode base64 ảnh đã tách nền
             const base64Image = noBgBuffer.toString('base64');
 
-            // 6. Gửi Roboflow để detect
+            // 5. Gửi Roboflow để detect
             const detectionRes = await axios.post(this.MODEL_URL, base64Image, {
                 params: { api_key: this.API_KEY },
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -81,6 +85,9 @@ export class ItemService {
 
             const prediction = detectionRes.data.predictions[0];
             if (!prediction) throw new Error('Không phát hiện được quần áo nào');
+
+            // 6. Upload lên W3S
+            const noBgUri = await this.uploadService.upload(noBgName, noBgBuffer); // URI trả về từ W3S
 
             // 7. Lấy màu chủ đạo
             const hexColors = await this.getDominantColors(noBgPath);
