@@ -5,15 +5,23 @@ import getColors from 'get-image-colors';
 import * as path from 'path';
 import { removeBackgroundFromImageFile } from 'remove.bg';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UploadService } from 'src/upload/upload.service';
 
 @Injectable()
 export class ItemService {
     private readonly API_KEY = 'ZA3Rip32FuiLPZNbkJDR';
     private readonly MODEL_URL = 'https://serverless.roboflow.com/clothing-detection-s4ioc/6';
     private readonly REMOVE_BG_KEY = '6ZpgC1wjpqDLQvFwMUURAZbZ';
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService, private readonly uploadService: UploadService,) { }
 
     create(data: any) {
+        const requiredFields = ['name', 'image', 'category', 'color', 'user_id'];
+
+        for (const field of requiredFields) {
+            if (!data[field] || (Array.isArray(data[field]) && data[field].length === 0)) {
+                throw new Error(`Field ${field} is required and cannot be empty.`);
+            }
+        }
         return this.prisma.item.create({ data });
     }
 
@@ -37,14 +45,17 @@ export class ItemService {
         return colors.map(color => color.hex());
     }
 
-    async detectClothing(imageName: string): Promise<any> {
-        const imageBaseName = path.parse(imageName).name; // 👉 lấy phần tên không có đuôi
-        const imagePath = path.join(__dirname, '..', '..', 'images', imageName);
-        const noBgName = `no-bg-${imageBaseName}.png`; // ✅ tên chuẩn cho ảnh tách nền
-        const noBgPath = path.join(__dirname, '..', '..', 'images', noBgName);
+    async detectClothingAfterUpload(imageName: string, buffer: Buffer): Promise<any> {
+        const imageBaseName = path.parse(imageName).name;
+        const imagePath = path.join(__dirname, '..', '..', 'temp', imageName); // lưu tạm
+        const noBgName = `no-bg-${imageBaseName}.png`;
+        const noBgPath = path.join(__dirname, '..', '..', 'temp', noBgName);
 
         try {
-            // Bước 1: Tách nền trước
+            // 1. Lưu file gốc vào ổ đĩa tạm thời
+            fs.writeFileSync(imagePath, buffer);
+
+            // 2. Tách nền
             await removeBackgroundFromImageFile({
                 path: imagePath,
                 apiKey: this.REMOVE_BG_KEY,
@@ -53,10 +64,16 @@ export class ItemService {
                 outputFile: noBgPath,
             });
 
-            // Bước 2: Encode ảnh đã tách nền sang base64 để gửi Roboflow
-            const base64Image = fs.readFileSync(noBgPath, { encoding: 'base64' });
+            // 3. Đọc ảnh tách nền vào buffer
+            const noBgBuffer = fs.readFileSync(noBgPath);
 
-            // Bước 3: Gửi Roboflow predict
+            // 4. Upload lên W3S
+            const noBgUri = await this.uploadService.upload(noBgName, noBgBuffer); // URI trả về từ W3S
+
+            // 5. Encode base64 ảnh đã tách nền
+            const base64Image = noBgBuffer.toString('base64');
+
+            // 6. Gửi Roboflow để detect
             const detectionRes = await axios.post(this.MODEL_URL, base64Image, {
                 params: { api_key: this.API_KEY },
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -65,17 +82,20 @@ export class ItemService {
             const prediction = detectionRes.data.predictions[0];
             if (!prediction) throw new Error('Không phát hiện được quần áo nào');
 
-            // Bước 4: Lấy màu chủ đạo
+            // 7. Lấy màu chủ đạo
             const hexColors = await this.getDominantColors(noBgPath);
 
             return {
                 prediction,
-                no_bg_image: `no-bg-${imageName}`,
+                image_uri: noBgUri,
                 dominantColors: hexColors,
             };
         } catch (error) {
             console.error('❌ Lỗi xử lý ảnh:', error.message);
             throw error;
+        } finally {
+            if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+            if (fs.existsSync(noBgPath)) fs.unlinkSync(noBgPath);
         }
     }
 

@@ -45,27 +45,7 @@ export class ItemController {
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     const ext = extname(file.originalname) || '.png';
     const uniqueName = uuidv4() + ext;
-    const result = await this.uploadService.upload(uniqueName, file.buffer);
-    console.log(result);
+    const result = await this.itemService.detectClothingAfterUpload(uniqueName, file.buffer);
+    return result;
   }
-  // @UseInterceptors(
-  //   FileInterceptor('file', {
-  //     storage: diskStorage({
-  //       destination: './images',
-  //       filename: (req, file, cb) => {
-  //         const ext = extname(file.originalname) || '.png';
-  //         const uniqueName = uuidv4() + ext;
-  //         cb(null, uniqueName);
-  //       },
-  //     }),
-  //   }),
-  // )
-  // async detectByFile(@UploadedFile() file: Express.Multer.File) {
-  //   if (!file) {
-  //     throw new Error('No file uploaded');
-  //   }
-  //   const result = await this.uploadService.upload(file.filename, file.buffer)
-  //   console.log(result);
-  //   return this.itemService.detectClothing(file.filename);
-  // }
 }
