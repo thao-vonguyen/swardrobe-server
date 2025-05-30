@@ -32,7 +32,7 @@ export class UserService {
         const user = await this.prisma.user.create({
             data: {
                 full_name: data.full_name,
-                gender: data.gender || 'M',
+                phone: data.phone,
                 email: data.email,
                 date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null,
                 password: hashedPassword,
@@ -70,7 +70,7 @@ export class UserService {
 
         const payload = { sub: user.id, email: user.email };
         const token = jwt.sign(payload, process.env.JWT_SECRET || 'default_secret', {
-            expiresIn: '1h', // thời gian sống của token
+            expiresIn: '3d', // thời gian sống của token
         });
 
         return {

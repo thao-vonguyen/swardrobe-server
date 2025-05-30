@@ -3,6 +3,7 @@ import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from 'src/auth/public.decorator';
+import { ApiBody } from '@nestjs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiBearerAuth()
@@ -12,12 +13,14 @@ export class UserController {
 
   @Public() // Đánh dấu route này là công khai, không cần xác thực
   @Post('register')
+  @ApiBody({ type: UserDto })
   create(@Body() body: UserDto) {
     return this.userService.create(body);
   }
 
   @Public() // Đánh dấu route này là công khai, không cần xác thực
   @Post('login')
+  @ApiBody({ type: LoginDto })
   async login(@Body() body: LoginDto) {
     return this.userService.login(body.email, body.password);
   }
