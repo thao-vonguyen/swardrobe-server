@@ -14,14 +14,13 @@ model item {
   image    String[]
   category String[]
   color    String[]
-  user_id  Int?
-  user     user?    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user")
+  user_id  Int
+  user     user     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "user")
 }
 
 model user {
   id            Int       @id @default(autoincrement())
   full_name     String
-  gender        String?   @default("M") @db.Char(1)
   email         String    @unique @default("example@gmail.com")
   phone         String    @default("0123456789")
   date_of_birth DateTime? @db.Date
