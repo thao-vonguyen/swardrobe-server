@@ -1,12 +1,20 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
-import { ItemService } from './item.service';
-import { ItemDto } from './dto/item.dto';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { ItemDto } from './dto/item.dto';
+import { ItemService } from './item.service';
+import { UploadService } from 'src/upload/upload.service';
 
 @ApiBearerAuth()
 @Controller('items')
 export class ItemController {
-  constructor(private readonly itemService: ItemService) { }
+  constructor(
+    private readonly itemService: ItemService,
+    private readonly uploadService: UploadService,
+  ) { }
 
   @Post()
   create(@Body() body: ItemDto) {
@@ -28,13 +36,15 @@ export class ItemController {
     return this.itemService.update(+id, body);
   }
 
-  @Get()
-  async detectClothing(@Query('image') imageName: string) {
-    return this.itemService.detectClothing(imageName);
-  }
-
-  @Get('my/:user_id')
-  findAll(@Param('user_id') user_id: string) {
-    return this.itemService.findAll(user_id);
+  @Post('detect')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+    const ext = extname(file.originalname) || '.png';
+    const uniqueName = uuidv4() + ext;
+    const result = await this.itemService.detectClothingAfterUpload(uniqueName, file.buffer);
+    return result;
   }
 }
