@@ -60,4 +60,9 @@ export class ItemController {
     const result = await this.itemService.detectClothingAfterUpload(uniqueName, file.buffer);
     return result;
   }
+
+  @Get('my/:user_id')
+  findAll(@Param('user_id') user_id: string) {
+    return this.itemService.findAll(user_id);
+  }
 }
