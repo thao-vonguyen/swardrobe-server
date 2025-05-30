@@ -83,8 +83,7 @@ export class ItemService {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             });
 
-            const prediction = detectionRes.data.predictions[0];
-            if (!prediction) throw new Error('Không phát hiện được quần áo nào');
+            const prediction = detectionRes.data.predictions;
 
             // 6. Upload lên W3S
             const noBgUri = await this.uploadService.upload(noBgName, noBgBuffer); // URI trả về từ W3S
