@@ -11,10 +11,6 @@ import FormData from 'form-data';
 
 @Injectable()
 export class ItemService {
-    private readonly API_KEY = 'ZA3Rip32FuiLPZNbkJDR';
-    private readonly MODEL_URL = 'https://serverless.roboflow.com/clothing-detection-s4ioc/6';
-    private readonly REMOVE_BG_KEY = '6ZpgC1wjpqDLQvFwMUURAZbZ';
-    private readonly CLIPDROP_API_KEY = '6857b44c0ef728ec0b417533360407cb5f7fc9253517b778c294496ba40177079598de43accc73994b94105d7791782c';
     constructor(private prisma: PrismaService, private readonly uploadService: UploadService,) { }
 
     create(data: any) {
@@ -70,7 +66,7 @@ export class ItemService {
 
             const response = await axios.post('https://clipdrop-api.co/remove-background/v1', form, {
                 headers: {
-                    'x-api-key': this.CLIPDROP_API_KEY,
+                    'x-api-key': process.env.CLIPDROP_API_KEY,
                     ...form.getHeaders(),
                 },
                 responseType: 'arraybuffer', // để nhận về binary image
@@ -83,8 +79,8 @@ export class ItemService {
             const base64Image = Buffer.from(response.data).toString('base64');
 
             // 5. Gửi đến Roboflow để detect
-            const detectionRes = await axios.post(this.MODEL_URL, base64Image, {
-                params: { api_key: this.API_KEY },
+            const detectionRes = await axios.post(process.env.MODEL_URL, base64Image, {
+                params: { api_key: process.env.API_KEY },
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             });
 

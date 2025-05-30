@@ -3,8 +3,8 @@ import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
 import { LoginDto } from './dto/login.dto';
 import { Public } from 'src/auth/public.decorator';
-import { ApiBody } from '@nestjs/swagger';
-
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+@ApiBearerAuth()
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) { }
