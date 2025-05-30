@@ -45,6 +45,66 @@ export class ItemService {
         return colors.map(color => color.hex());
     }
 
+    // async detectClothingAfterUpload(imageName: string, buffer: Buffer): Promise<any> {
+    //     const imageBaseName = path.parse(imageName).name;
+    //     const tempDir = path.join(__dirname, '..', '..', 'temp');
+
+    //     // ✅ Tạo thư mục nếu chưa tồn tại
+    //     if (!fs.existsSync(tempDir)) {
+    //         fs.mkdirSync(tempDir, { recursive: true });
+    //     }
+
+    //     const imagePath = path.join(tempDir, imageName);
+    //     const noBgName = `no-bg-${imageBaseName}.png`;
+    //     const noBgPath = path.join(tempDir, noBgName);
+
+    //     try {
+    //         // 1. Lưu file gốc vào ổ đĩa tạm thời
+    //         fs.writeFileSync(imagePath, buffer);
+
+    //         // 2. Tách nền
+    //         await removeBackgroundFromImageFile({
+    //             path: imagePath,
+    //             apiKey: this.REMOVE_BG_KEY,
+    //             size: 'auto',
+    //             type: 'auto',
+    //             outputFile: noBgPath,
+    //         });
+
+    //         // 3. Đọc ảnh tách nền vào buffer
+    //         const noBgBuffer = fs.readFileSync(noBgPath);
+
+    //         // 4. Encode base64 ảnh đã tách nền
+    //         const base64Image = noBgBuffer.toString('base64');
+
+    //         // 5. Gửi Roboflow để detect
+    //         const detectionRes = await axios.post(this.MODEL_URL, base64Image, {
+    //             params: { api_key: this.API_KEY },
+    //             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    //         });
+
+    //         const prediction = detectionRes.data.predictions;
+
+    //         // 6. Upload lên W3S
+    //         const noBgUri = await this.uploadService.upload(noBgName, noBgBuffer); // URI trả về từ W3S
+
+    //         // 7. Lấy màu chủ đạo
+    //         const hexColors = await this.getDominantColors(noBgPath);
+
+    //         return {
+    //             prediction,
+    //             image_uri: noBgUri,
+    //             dominantColors: hexColors,
+    //         };
+    //     } catch (error) {
+    //         console.error('❌ Lỗi xử lý ảnh:', error.message);
+    //         throw error;
+    //     } finally {
+    //         if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    //         if (fs.existsSync(noBgPath)) fs.unlinkSync(noBgPath);
+    //     }
+    // }
+
     async detectClothingAfterUpload(imageName: string, buffer: Buffer): Promise<any> {
         const imageBaseName = path.parse(imageName).name;
         const tempDir = path.join(__dirname, '..', '..', 'temp');
@@ -55,29 +115,15 @@ export class ItemService {
         }
 
         const imagePath = path.join(tempDir, imageName);
-        const noBgName = `no-bg-${imageBaseName}.png`;
-        const noBgPath = path.join(tempDir, noBgName);
 
         try {
             // 1. Lưu file gốc vào ổ đĩa tạm thời
             fs.writeFileSync(imagePath, buffer);
 
-            // 2. Tách nền
-            await removeBackgroundFromImageFile({
-                path: imagePath,
-                apiKey: this.REMOVE_BG_KEY,
-                size: 'auto',
-                type: 'auto',
-                outputFile: noBgPath,
-            });
+            // 2. Encode base64 ảnh gốc
+            const base64Image = buffer.toString('base64');
 
-            // 3. Đọc ảnh tách nền vào buffer
-            const noBgBuffer = fs.readFileSync(noBgPath);
-
-            // 4. Encode base64 ảnh đã tách nền
-            const base64Image = noBgBuffer.toString('base64');
-
-            // 5. Gửi Roboflow để detect
+            // 3. Gửi Roboflow để detect
             const detectionRes = await axios.post(this.MODEL_URL, base64Image, {
                 params: { api_key: this.API_KEY },
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -85,15 +131,15 @@ export class ItemService {
 
             const prediction = detectionRes.data.predictions;
 
-            // 6. Upload lên W3S
-            const noBgUri = await this.uploadService.upload(noBgName, noBgBuffer); // URI trả về từ W3S
+            // 4. Upload ảnh gốc lên W3S
+            const imageUri = await this.uploadService.upload(imageName, buffer);
 
-            // 7. Lấy màu chủ đạo
-            const hexColors = await this.getDominantColors(noBgPath);
+            // 5. Lấy màu chủ đạo từ ảnh gốc
+            const hexColors = await this.getDominantColors(imagePath);
 
             return {
                 prediction,
-                image_uri: noBgUri,
+                image_uri: imageUri,
                 dominantColors: hexColors,
             };
         } catch (error) {
@@ -101,7 +147,6 @@ export class ItemService {
             throw error;
         } finally {
             if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
-            if (fs.existsSync(noBgPath)) fs.unlinkSync(noBgPath);
         }
     }
 
