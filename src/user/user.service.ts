@@ -70,7 +70,7 @@ export class UserService {
 
         const payload = { sub: user.id, email: user.email };
         const token = jwt.sign(payload, process.env.JWT_SECRET || 'default_secret', {
-            expiresIn: '1h', // thời gian sống của token
+            expiresIn: '3d', // thời gian sống của token
         });
 
         return {
