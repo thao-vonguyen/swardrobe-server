@@ -28,16 +28,18 @@ export class ItemService {
         return this.prisma.item.findUnique({ where: { id } });
     }
 
-    update(id: number, data: any) {
-        return this.prisma.item.update({
-            where: { id },
-            data,
-        });
+    // update
+    async update(id: number, data: any) {
+        await this.prisma.item.update({ where: { id }, data });
+        return { message: 'Cập nhật item thành công' };
     }
 
-    remove(id: number) {
-        return this.prisma.item.delete({ where: { id } });
+    // remove
+    async remove(id: number) {
+        await this.prisma.item.delete({ where: { id } });
+        return { message: 'Xóa item thành công' };
     }
+
 
     private async getDominantColors(imagePath: string): Promise<string[]> {
         const colors = await getColors(imagePath); // tự đoán loại file từ extension

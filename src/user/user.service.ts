@@ -46,19 +46,34 @@ export class UserService {
         };
     }
 
-    update(id: number, data: any) {
-        return this.prisma.user.update({
+    async update(id: number, data: any) {
+        const user = await this.prisma.user.update({
             where: { id },
-            data,
+            data: {
+                ...data,
+                date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : undefined,
+            },
         });
+
+        return {
+            message: 'Cập nhật người dùng thành công',
+        }
     }
 
-    findOne(id: number) {
-        return this.prisma.user.findUnique({ where: { id } });
+    async findOne(id: number) {
+        const user = await this.prisma.user.findUnique({ where: { id } });
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        const { password, ...rest } = user;
+        return rest;
     }
 
-    remove(id: number) {
-        return this.prisma.user.delete({ where: { id } });
+    async remove(id: number) {
+        await this.prisma.user.delete({ where: { id } });
+        return { message: 'Xóa người dùng thành công' };
     }
 
     async login(email: string, password: string) {
